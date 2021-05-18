@@ -168,6 +168,29 @@ void dumpNames(CFArrayRef names, char *cat)
     }
 }
 
+void dumpInflux(CFArrayRef names, CFArrayRef values)
+{
+    long countNames = CFArrayGetCount(names);
+    long countValues = CFArrayGetCount(values);
+
+    if (countNames != countValues) {
+        return;
+    }
+
+    for (int i = 0; i < countNames; i++) {
+        NSString *name = (NSString *)CFArrayGetValueAtIndex(names, i);
+        NSString *escaped = [name stringByReplacingOccurrencesOfString:@" " withString:@"\\ "];
+
+        CFNumberRef value = CFArrayGetValueAtIndex(values, i);
+        double temp = 0.0;
+        CFNumberGetValue(value, kCFNumberDoubleType, &temp);
+
+        printf("sensors,name=%s temperature=%0.1lf\n", [escaped UTF8String], temp);
+
+        CFRelease(escaped);
+    }
+}
+
 NSArray* currentArray() {
     CFDictionaryRef currentSensors = matching(0xff08, 2);
     return CFBridgingRelease(getProductNames(currentSensors));
@@ -230,25 +253,26 @@ int main () {
 //  printf("freq, v_bat, a_bat, temp_bat");
 //    dumpNames(voltageNames, "V");
 //    dumpNames(currentNames, "A");
-    dumpNames(thermalNames, "C");
-    printf("\n"); fflush(stdout);
+    //dumpNames(thermalNames, "C");
+    //printf("\n"); fflush(stdout);
 
-    while (1) {
-        CFArrayRef currentValues = getPowerValues(currentSensors);
-        CFArrayRef voltageValues = getPowerValues(voltageSensors);
+//    while (1) {
+//        CFArrayRef currentValues = getPowerValues(currentSensors);
+//        CFArrayRef voltageValues = getPowerValues(voltageSensors);
         CFArrayRef thermalValues = getThermalValues(thermalSensors);
 //        printf("%lld, ", my_mhz());
 //        mybat();
 
 //        dumpValues(voltageValues);
 //        dumpValues(currentValues);
-        dumpValues(thermalValues);
-        printf("\n"); fflush(stdout);
-        usleep(500000); // usleep - suspend execution for microsecond intervals
-        CFRelease(currentValues);
-        CFRelease(voltageValues);
+        //dumpValues(thermalValues);
+        dumpInflux(thermalNames, thermalValues);
+        //printf("\n"); fflush(stdout);
+        //usleep(500000); // usleep - suspend execution for microsecond intervals
+//        CFRelease(currentValues);
+//        CFRelease(voltageValues);
         CFRelease(thermalValues);
-    }
+//    }
 
 #if 0
     NSLog(@"%@\n", CFArrayGetValueAtIndex(currentNames, 0));
